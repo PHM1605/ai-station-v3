@@ -1,26 +1,40 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
-import SideBar from './components/SideBar'
-import TopBar from './components/TopBar'
-import AnnotationScreen from './components/AnnotationScreen'
-import NavBar from './components/NavBar'
+import HomePage from './components/HomePage'
+import RequireAuth from './components/RequireAuth'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import SignIn from './components/SignIn'
+import Register from './components/Register'
+import Projects from './components/Projects'
+import Models from './components/Models'
+import WorkspaceLayout from './components/WorkspaceLayout'
+import CreateProject from './components/CreateProject'
+import ProjectLayout from './components/ProjectLayout'
+import AnnotatePage from "./components/AnnotatePage"
+import UploadPage from './components/UploadPage'
 
 function App() {
  
   return (
     <>
-    <div className="flex flex-col relative bg-green-100">
-      <NavBar />
-      <div>fjdskjfksdjf</div>
-      <div>fjdskjfksdjf</div>
-      <div>fjdskjfksdjf</div>
-      <div>fjdskjfksdjf</div>
-      <div>fjdskjfksdjf</div>
-      <div>fjdskjfksdjf</div>
-    </div>
+    <Routes>
+      <Route index element={<HomePage />} />
+      {/* <Route path="/register" element={} /> */}
+      <Route path="/signin" element={<SignIn />} />
+      <Route path="/register" element={<Register />} />
+      <Route element={<RequireAuth />}>
+        <Route path="/workspace" element={<WorkspaceLayout />}>
+          <Route index element={<Projects />} />
+          <Route path="models" element={<Models />} />
+          <Route path=":projectId" element={<ProjectLayout />}>
+            {/* Navigate to /upload by default */}
+            <Route index element={<Navigate to="upload" replace />} />
+            <Route path="upload" element={<UploadPage />} />
+            <Route path="annotate" element={<AnnotatePage />} />
+          </Route>
+        </Route>
+        <Route path="/create" element={<CreateProject />} />
+      </Route>
+    </Routes>
     
     {/* <div className='h-screen w-screen flex'>
       <SideBar /> */}

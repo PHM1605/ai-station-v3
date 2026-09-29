@@ -7,7 +7,7 @@ function NavBar() {
   const navigate = useNavigate();
   
   return (
-    <nav className="absolute top-0 left-0 flex justify-between items-center z-10 px-3 py-4 bg-blue-900 w-full h-12 px-8">
+    <nav className="sticky top-0 left-0 flex justify-between items-center z-10 px-3 py-4 bg-blue-900 w-full h-12 px-8">
       <div className="flex gap-4">
         <i className="fas fa-dragon fa-2x text-yellow-500" />
         <span className="text-2xl font-semibold text-blue-200">Ai Station</span>

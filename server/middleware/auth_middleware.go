@@ -1,31 +1,38 @@
 package middleware
 
 import (
+	"net/http"
+
+	"github.com/PHM1605/ai-station-v3/server/utils"
 	"github.com/gin-gonic/gin"
 )
 
-type SignedDetails struct {
-	Email
-}
-
-// Generate both Access Token and Refresh Token
-func GenerateAllTokens(email, firstName, lastName, role, userId string) (string, string, error) {
-	claims := &SignedDetails{}
-}
-
-func GetAccessToken(c *gin.Context) (string, error) {
-	tokenString, err := c.Cookie("access_token")
-	if err != nil {
-		return "", err
-	}
-	// token good
-	return tokenString, nil
-}
-
-func ValidateToken(tokenString string)
-
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
+		// Get Access Token raw string
+		token, err := utils.GetAccessToken(c)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			c.Abort() // NOTE: in Middleware we cancel latter Callback like this
+			return
+		}
+		// Access Token is empty string
+		if token == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "No token provided"})
+			c.Abort()
+			return
+		}
+		// Validate Access Token; parse Token into Claims
+		claims, err := utils.ValidateAccessToken(token)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Abort()
+			return
+		}
+		// Put info into Request's context
+		c.Set("userId", claims.UserId)
+		c.Set("role", claims.Role)
+		// Continue to Handler after Middleware
+		c.Next()
 	}
 }

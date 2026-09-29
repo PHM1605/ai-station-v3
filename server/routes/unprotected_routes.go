@@ -7,5 +7,7 @@ import (
 )
 
 func SetupUnprotectedRoutes(router *gin.Engine, client *mongo.Client) {
+	router.POST("/signin", controller.LoginUser(client))
+	router.POST("/register", controller.RegisterUser(client))
 	router.POST("/refresh", controller.RefreshTokenHandler(client))
 }

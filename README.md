@@ -8,6 +8,11 @@ brew services start mongodb-community
 brew install --cask mongodb-compass
 ```
 
+Install `ffmpeg`
+```sh
+brew install ffmpeg
+```
+
 
 ```sh
 npm create vite@latest . -- --template react

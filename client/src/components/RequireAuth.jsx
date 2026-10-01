@@ -8,7 +8,9 @@ function RequireAuth() {
   
   if (loading) {
     return (
-      <Spinner />
+      <div className="flex justify-center items-center">
+        <Spinner />
+      </div>
     );
   }
   

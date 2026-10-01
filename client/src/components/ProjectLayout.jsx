@@ -2,7 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 
 function ProjectSidebar() {
   const tabClass = ({isActive}) => `
-    rounded px-3 py-2 gap-2 flex items-center ${isActive ? "bg-blue-100 border border-blue-700" : "text-gray-700 hover:bg-gray-100"}
+    rounded px-3 py-2 gap-2 flex items-center ${isActive ? "bg-blue-100 border border-blue-700 text-blue-700" : "text-gray-700 hover:bg-gray-100"}
   `
   
   return (
@@ -26,7 +26,7 @@ function ProjectSidebar() {
 
 function ProjectLayout() {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-0 flex-1">
       <ProjectSidebar />
       <div className="flex-1 flex flex-col px-4 py-2">
         <Outlet />

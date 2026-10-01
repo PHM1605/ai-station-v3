@@ -9,6 +9,12 @@ const initialState = {
   datasets: {},
   datasetsLoaded: false,
   datasetsProjectId: null,
+  
+  frames: {},
+  framePages: {}, // {"5": [12,34,67...], "7": [xxx...]} => Page 5 has Frame IDs of [12,34,67...] etc.
+  framesScopeId: null, 
+  framesTotal: 0,
+  framesLimit: 60,
 }
 
 function reducer(state, action) {
@@ -80,6 +86,39 @@ function reducer(state, action) {
     return {
       ...state,
       datasets,
+    }
+  }
+  
+  // dispatch({
+  //   type: "CACHE_FRAMES",
+  //   id: datasetId,
+  //   data: response.data.frames,
+  //   page: response.data.page,
+  //   total: response.data.total,
+  //   limit: response.data.limit,
+  // })
+  
+  case "CACHE_FRAMES": {
+    // check if request to cache & current cache is of same Dataset
+    const sameScope = action.id === state.framesScopeId
+    // if same Dataset => load current Frames first; else from scratch {}
+    const frames = sameScope ? {...state.frames} : {}
+    // what Frame IDs are being requested to cache?
+    const frameIds = []
+    for (const frame of action.data) {
+      frames[frame.frame_id] = frame
+      frameIds.push(frame.frame_id)
+    }
+    // Page 5 has Frame IDs of [12,34,67...]
+    const framePages = sameScope ? {...state.framePages, [action.page]: frameIds} : {[action.page]: frameIds}
+    
+    return {
+      ...state,
+      frames,
+      framePages,
+      framesScopeId: action.id,
+      framesTotal: action.total,
+      framesLimit: action.limit,
     }
   }
     

@@ -11,6 +11,8 @@ import CreateProject from './components/CreateProject'
 import ProjectLayout from './components/ProjectLayout'
 import AnnotatePage from "./components/AnnotatePage"
 import UploadPage from './components/UploadPage'
+import DatasetPage from './components/DatasetPage'
+import AnnotationScreen from './components/AnnotationScreen'
 
 function App() {
  
@@ -29,10 +31,15 @@ function App() {
             {/* Navigate to /upload by default */}
             <Route index element={<Navigate to="upload" replace />} />
             <Route path="upload" element={<UploadPage />} />
-            <Route path="annotate" element={<AnnotatePage />} />
+            <Route path="annotate">
+              <Route index element={<AnnotatePage />} />
+              <Route path=":datasetId" element={<DatasetPage />} />
+            </Route> 
           </Route>
         </Route>
+        
         <Route path="/create" element={<CreateProject />} />
+        <Route path="/annotate/:datasetId/:frameId" element={<AnnotationScreen />} />
       </Route>
     </Routes>
     

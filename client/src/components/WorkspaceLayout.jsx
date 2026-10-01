@@ -46,7 +46,10 @@ function WorkspaceSidebar() {
         )}
         
         <button type="button" onClick={() => setShowUserMenu(open => !open)}
-          className="hover:bg-blue-200 px-3 py-2 w-full flex rounded hover:cursor-pointer">
+          className="hover:bg-blue-200 px-3 py-2 w-full flex rounded hover:cursor-pointer items-center">
+          <div className="rounded w-6 h-6 rounded-full bg-gray-600 text-white font-bold me-2">
+            {auth.first_name.charAt(0)}
+          </div>
           <div>{auth.first_name} {auth.last_name}</div>    
         </button>
       </div>
@@ -57,9 +60,9 @@ function WorkspaceSidebar() {
 
 function WorkspaceLayout() {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <WorkspaceSidebar />
-      <main className="flex-1 flex flex-col">
+      <main className="flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden">
         <Outlet />
       </main>
     </div>

@@ -20,4 +20,9 @@ func SetupProtectedRoutes(router *gin.Engine, client *mongo.Client) {
 
 	router.GET("/projects/:projectId/datasets", controller.GetDatasets(client))
 	router.POST("/projects/:projectId/datasets", controller.CreateDataset(client))
+	router.DELETE("/projects/:projectId/datasets/:datasetId", controller.DeleteDataset(client))
+
+	router.GET("/projects/:projectId/frames", controller.GetAllFrames(client))
+	router.GET("/projects/:projectId/datasets/:datasetId/frames", controller.GetDatasetFrames(client))
+	router.GET("/frames/:frameId/image", controller.GetFrameImage(client))
 }

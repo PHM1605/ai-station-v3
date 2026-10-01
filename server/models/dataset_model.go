@@ -33,6 +33,7 @@ type DatasetVideo struct {
 	OwnerID      string  `json:"owner_id" bson:"owner_id"`
 	OriginalName string  `json:"original_name" bson:"original_name"`
 	StoredName   string  `json:"stored_name" bson:"stored_name"`
+	VideoPath    string  `json:"-" bson:"video_path"`
 	Duration     float64 `json:"duration" bson:"duration"`
 	FrameCount   int     `json:"frame_count" bson:"frame_count"`
 }

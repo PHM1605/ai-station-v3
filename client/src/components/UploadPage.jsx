@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useStation } from "../context/StationProvider";
 import { useEffect, useRef, useState } from "react";
 import axiosClient from "../api/axiosConfig";
@@ -19,10 +19,16 @@ function UploadPage() {
   const [invalidVideos, setInvalidVideos] = useState([]);
   
   const [loadingDatasets, setLoadingDatasets] = useState(false);
-  const [loadError, setLoadError] = useState("");
+  const [pageError, setPageError] = useState("");
+  
+  const [datasetToDelete, setDatasetToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   
   // To handle the case that: when Mouse Cursor enters a Child <div> inside the Parent <div> it's another MouseEnter
   const dragDepth = useRef(0);
+  
+  const navigate = useNavigate();
   
   const datasets = Object.values(state.datasets).filter(
     dataset => dataset.project_id === projectId
@@ -37,7 +43,7 @@ function UploadPage() {
     
     async function fetchDatasets() {
       setLoadingDatasets(true);
-      setLoadError("")
+      setPageError("")
       try {
         const response = await axiosClient.get(`/projects/${projectId}/datasets`)
         dispatch(({
@@ -46,7 +52,7 @@ function UploadPage() {
           data: response.data.datasets,
         }))
       } catch(error) {
-        setLoadError(error.response?.data?.error ?? "Unable to load datasets")
+        setPageError(error.response?.data?.error ?? "Unable to load datasets")
       } finally {
         setLoadingDatasets(false)
       }
@@ -131,6 +137,27 @@ function UploadPage() {
     }
   }
   
+  const handleOpenDataset = datasetId => {
+    navigate(`/workspace/${projectId}/annotate/${datasetId}`)
+  }
+    
+  const handleDeleteDataset = async () => {
+    if (!datasetToDelete) {
+      return 
+    }
+    setDeleting(true);
+    setPageError("");
+    try {
+      await axiosClient.delete(`/projects/${projectId}/datasets/${datasetToDelete.dataset_id}`);
+      dispatch({type: "DELETE_DATASET", id: datasetToDelete.dataset_id});
+      setDatasetToDelete(null)
+    } catch(error) {
+      setDeleteError(error.response?.data?.error ?? "Unable to delete dataset")
+    } finally {
+      setDeleting(false);
+    }
+  }
+  
   return (
     <>
     <div className="flex justify-end px-4 py-2">
@@ -154,8 +181,8 @@ function UploadPage() {
     )}
     
     {/* List of Datasets */}
-    {loadError && (
-      <div className="mt-4 rounded border border-red-700 bg-red-100 px-3 py-2 text-sm text-red-700">{loadError}</div>
+    {pageError && (
+      <div className="mt-4 rounded border border-red-700 bg-red-100 px-3 py-2 text-sm text-red-700">{pageError}</div>
     )}
     {loadingDatasets && (
       <div className="flex justify-center">
@@ -169,6 +196,7 @@ function UploadPage() {
       <div className="flex flex-col gap-4">
         {datasets.map(dataset => (
           <div key={dataset.dataset_id}
+            onClick={() => handleOpenDataset(dataset.dataset_id)}
             className="flex justify-between px-4 py-2 mt-4 border rounded hover:bg-gray-100 hover:cursor-pointer">
             <div className="flex flex-col gap-2">
               <div className="font-bold">{dataset.name}</div>
@@ -176,12 +204,45 @@ function UploadPage() {
               <div className="text-sm italic">{dataset.status}</div>
             </div>
             <div className="flex flex-col justify-center items-center">
-              <div className="border border-red-700 rounded-full w-8 h-8 p-1 hover:bg-red-100">
+              <button type="button"
+                onClick={e => {
+                  e.stopPropagation()
+                  setPageError("")
+                  setDatasetToDelete(dataset)
+                }} 
+                className="border border-red-700 rounded-full w-8 h-8 p-1 hover:bg-red-100">
                 <i className="fa-solid fa-trash text-red-700" />
-              </div>
+              </button>
             </div>
           </div>
         ))}
+      </div>
+    )}
+    
+    {datasetToDelete && (
+      <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40">
+        <div className="w-full max-w-md rounded bg-white p-5">
+          <h2 className="text-xl font-bold">Delete Dataset</h2>
+          <p className="mt-4">Delete dataset <strong>"{datasetToDelete.name}"</strong></p>
+          <p className="mt-2 text-sm text-gray-700">Its uploaded videos and annotation frames will also be deleted.</p>
+          
+          <div className="mt-4 flex justify-center gap-3">
+            <button type="button" 
+              disabled={deleting} 
+              onClick={() => {
+                setDatasetToDelete(null);
+                setDeleteError("")
+              }}
+              className="rounded border px-4 py-2 hover:cursor-pointer hover:bg-gray-100 disabled:cursor-not-allowed">
+              Cancel
+            </button>
+            <button type="button" disabled={deleting} onClick={handleDeleteDataset}
+              className="rounded bg-red-700 px-4 py-2 text-white hover:cursor-pointer hover:bg-red-800 disabled:cursor-not-allowed">
+              {deleting ? <Spinner /> : "Delete"}    
+            </button>
+          </div>
+          
+        </div>
       </div>
     )}
     

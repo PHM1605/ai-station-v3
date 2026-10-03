@@ -25,4 +25,5 @@ func SetupProtectedRoutes(router *gin.Engine, client *mongo.Client) {
 	router.GET("/projects/:projectId/frames", controller.GetAllFrames(client))
 	router.GET("/projects/:projectId/datasets/:datasetId/frames", controller.GetDatasetFrames(client))
 	router.GET("/frames/:frameId/image", controller.GetFrameImage(client))
+	router.GET("/frames/:frameId/navigation", controller.GetFrameNavigationContext(client))
 }

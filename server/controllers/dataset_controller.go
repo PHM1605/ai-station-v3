@@ -536,3 +536,116 @@ func GetFrameImage(client *mongo.Client) gin.HandlerFunc {
 		c.File(frame.ImagePath)
 	}
 }
+
+// What is the index of a Frame in a Dataset
+func GetFrameNavigationContext(client *mongo.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userId := c.GetString("userId")
+		if userId == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+		frameId := c.Param("frameId")
+		// Set Timeout for Request
+		var ctx, cancel = context.WithTimeout(c, 100*time.Second)
+		defer cancel()
+
+		// Retrieve Frame from DB
+		var frame models.VideoFrame
+		var frameCollection *mongo.Collection = database.OpenCollection("video_frames", client)
+		err := frameCollection.FindOne(ctx, bson.M{"frame_id": frameId, "owner_id": userId}).Decode(&frame)
+		if err == mongo.ErrNoDocuments {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Frame not found"})
+			return
+		}
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve frame"})
+			return
+		}
+
+		// Count how many Frames in a specific Dataset
+		total, err := frameCollection.CountDocuments(ctx, bson.M{
+			"dataset_id": frame.DatasetID,
+			"project_id": frame.ProjectID,
+			"owner_id":   userId,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count Frames"})
+			return
+		}
+
+		// Count how many Frames BEFORE current Frame of interest
+		// NOTE: Frames are sorted by "video_id" first, then per "frame_number" (see "GetDatasetFrames" function)
+		// "bson.A" means "ADD" frames that satisfy 2 conditions
+		// - 1st condition: video_id less than of current Frame
+		// - 2nd condition: video_id same; frame_number less than of current Frame
+		beforeFilter := bson.M{
+			"dataset_id": frame.DatasetID,
+			"project_id": frame.ProjectID,
+			"owner_id":   userId,
+			"$or": bson.A{
+				bson.M{"video_id": bson.M{"$lt": frame.VideoID}},
+				bson.M{"video_id": frame.VideoID, "frame_number": bson.M{"$lt": frame.FrameNumber}},
+			},
+		}
+		before, err := frameCollection.CountDocuments(ctx, beforeFilter)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find frame position"})
+			return
+		}
+
+		// Find the previous Frame
+		previousFrameId := ""
+		if before > 0 {
+			var previousFrame models.VideoFrame
+			err = frameCollection.FindOne(
+				ctx,
+				beforeFilter,
+				options.FindOne().SetSort(
+					bson.D{{Key: "video_id", Value: -1}, {Key: "frame_number", Value: -1}},
+				),
+			).Decode(&previousFrame)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find previous frame"})
+				return
+			}
+			previousFrameId = previousFrame.FrameID
+		}
+
+		// Find the Next Frame
+		nextFrameId := ""
+		nextFilter := bson.M{
+			"dataset_id": frame.DatasetID,
+			"project_id": frame.ProjectID,
+			"owner_id":   userId,
+			"$or": bson.A{
+				bson.M{"video_id": bson.M{"$gt": frame.VideoID}},
+				bson.M{"video_id": frame.VideoID, "frame_number": bson.M{"$gt": frame.FrameNumber}},
+			},
+		}
+		if before+1 < total {
+			var nextFrame models.VideoFrame
+			err = frameCollection.FindOne(
+				ctx,
+				nextFilter,
+				options.FindOne().SetSort(
+					bson.D{{Key: "video_id", Value: 1}, {Key: "frame_number", Value: 1}},
+				),
+			).Decode(&nextFrame)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find next frame"})
+				return
+			}
+			nextFrameId = nextFrame.FrameID
+		}
+
+		frame.ImageURL = fmt.Sprintf("/frames/%s/image", frame.FrameID)
+		c.JSON(http.StatusOK, gin.H{
+			"frame":             frame,
+			"position":          before + 1,
+			"total":             total,
+			"previous_frame_id": previousFrameId,
+			"next_frame_id":     nextFrameId,
+		})
+	}
+}
